@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparisons — trainer</title>
+<style>
+:root{--acc:#3b3f8f;--bg:#f6f5fb;--ink:#1d2433;--line:#d5d9e4;--ok:#17703a;--okbg:#def3e5;--bad:#a8281c;--badbg:#fbe3e0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.45 "Trebuchet MS","Segoe UI",Verdana,sans-serif}
+#app{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:clamp(30px,6vw,46px);margin:8px 0 4px;color:var(--acc)}h2{margin:6px 0;font-size:22px}
+.sub{margin:0 0 16px;color:#52607a}
+button{font:inherit;cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:10px 14px;min-height:48px}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.pri{background:var(--acc);color:#fff;border-color:var(--acc)}.ghost{background:transparent}
+.mod{background:#fff;border:2px solid var(--line);border-left:12px solid var(--acc);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.mh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.mh h2{color:var(--acc)}.mh small{flex:1;color:#52607a}
+.lv{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:10px}
+.lvb{text-align:left;display:flex;flex-direction:column}.stars{color:#d99a00;letter-spacing:2px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.sp{flex:1}
+.pill{background:#fff;border:2px solid var(--acc);color:var(--acc);font-weight:700;padding:6px 14px;border-radius:20px}
+.pic{background:#fff;border:2px solid var(--line);border-radius:12px;padding:8px;text-align:center;margin-bottom:10px}
+.pic img{max-width:100%;max-height:250px;object-fit:contain}
+.pic.ph{min-height:120px;display:flex;align-items:center;justify-content:center;border-style:dashed;color:#888}
+.box{background:#fff;border:2px solid var(--line);border-radius:12px;padding:16px;text-align:center}
+.box.left{text-align:left}.box.left p{margin:6px 0}
+.def{font-size:clamp(20px,4vw,26px);margin:6px 0 12px}.ins{color:var(--acc);font-weight:700;margin-bottom:10px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.opt{font-size:20px;min-height:60px}
+.ok{background:var(--okbg)!important;border-color:var(--ok)!important;color:var(--ok)!important;font-weight:700}
+.bad{background:var(--badbg)!important;border-color:var(--bad)!important;color:var(--bad)!important}
+button:disabled{cursor:default;opacity:1}
+.fb{margin:12px 0 6px;font-size:20px;font-weight:700;text-align:center;min-height:30px}
+.fb.ok,.fb.bad{background:none!important;border:0!important}.fb .ans{color:var(--ink)}.fb .rule{font-size:16px;font-weight:400;color:#52607a;margin-top:4px}
+.nx{display:block;margin:12px auto;min-width:200px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+input[type=text]{font:inherit;font-size:24px;text-align:center;width:100%;max-width:560px;padding:10px;border:3px solid var(--line);border-radius:10px}
+.blank{display:inline-block;width:110px;border-bottom:3px solid var(--acc)}
+.built{min-height:56px;border-bottom:3px solid var(--acc);display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;font-size:24px;padding:6px;margin-bottom:10px}
+.chip{background:var(--acc);color:#fff;border-radius:8px;padding:4px 10px}
+.built.ok{border-color:var(--ok)}.built.bad{border-color:var(--bad)}
+.tiles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.tile{font-size:22px;font-weight:700;min-height:52px}
+.final{text-align:center}.final .stars{font-size:56px}
+</style></head><body><div id="app"></div>
+<script>
+/* ===== НАСТРОЙКИ ===== */
+const IMG="img/";          // папка с картинками рядом с этим файлом
+const ROUND=10;            // сколько заданий в одном прохождении уровня
+const KEY="trainer_comparisons_v1";
+
+/* ===== ДАННЫЕ (для добавления новых картинок — добавляйте строки) =====
+   Пары:  [файл без .png, "A", "B", прилагательное, противоположное]  — A обладает признаком БОЛЬШЕ, чем B
+   Равные:[файл, "A", "B", прилагательное]                               — A и B одинаковые
+   Тройки:[файл, "A", "B", "C", прилагательное]                          — от самого сильного признака (A) к самому слабому (C)
+   Сцены: [файл, "Подлежащее", прилагательное, противоположное, "продолжение", true если «enough» утвердительное] */
+const P=[
+["pair_elephant_mouse","the elephant","the mouse","big","small"],
+["pair_giraffe_horse","the giraffe","the horse","tall","short"],
+["pair_cheetah_turtle","the cheetah","the turtle","fast","slow"],
+["pair_stone_feather","the stone","the feather","heavy","light"],
+["pair_pencil_long_short","the left pencil","the right pencil","long","short"],
+["pair_grandpa_baby","the grandpa","the baby","old","young"],
+["pair_fire_snowman","the fire","the snowman","hot","cold"],
+["pair_book_thick_thin","the red book","the yellow book","thick","thin"],
+["pair_concert_library","the library","the concert","quiet","loud"],
+["pair_ring_diamond_plastic","the diamond ring","the plastic ring","expensive","cheap"],
+["pair_shark_goldfish","the shark","the goldfish","dangerous","safe"],
+["pair_sofa_stool","the sofa","the chair","comfortable","uncomfortable"],
+["pair_chess_noughts","chess","noughts and crosses","difficult","easy"],
+["pair_pizza_fresh_burnt","the fresh pizza","the burnt pizza","good","bad"]];
+const E=[
+["eq_twins_tall","the left girl","the right girl","tall"],
+["eq_bikes_price","the green bike","the blue bike","expensive"],
+["eq_snakes_long","the blue snake","the red snake","long"],
+["eq_cakes_big","the left cake","the right cake","big"],
+["eq_dogs_fast","the left dog","the right dog","fast"]];
+const T=[
+["trio_dogs_big","the big dog","the middle dog","the small dog","big"],
+["trio_buildings_tall","the skyscraper","the house","the shed","tall"],
+["trio_transport_fast","the plane","the car","the bike","fast"],
+["trio_bags_heavy","the suitcase","the backpack","the paper bag","heavy"],
+["trio_drinks_hot","the soup","the tea","the ice cream","hot"],
+["trio_vehicles_expensive","the yacht","the car","the bike","expensive"],
+["trio_animals_dangerous","the shark","the dog","the rabbit","dangerous"],
+["trio_puzzles_difficult","the big puzzle","the middle puzzle","the small puzzle","difficult"],
+["trio_seats_comfortable","the sofa","the chair","the stump","comfortable"],
+["trio_pizzas_good","the left pizza","the middle pizza","the right pizza","good"],
+["trio_sounds_loud","the rock band","the TV","the whisper","loud"]];
+const SC=[
+["scene_boy_shelf","The boy","short","tall","to reach the shelf"],
+["scene_girl_suitcase","The girl","weak","strong","to lift the suitcase"],
+["scene_soup_hot","The soup","hot","cool","to eat"],
+["scene_winter_sea","The sea","cold","warm","to swim"],
+["scene_big_foot_shoe","The shoe","small","big","for his foot"],
+["scene_kid_rollercoaster","The boy","short","tall","to ride the rollercoaster"],
+["scene_boy_bus","The boy","slow","fast","to catch the bus"],
+["scene_bike_shop","The bike","expensive","cheap","for the boy"],
+["scene_loud_music_sleep","The music","loud","quiet","for the boy to sleep"],
+["scene_dark_room_book","The room","dark","bright","to read"],
+["scene_hard_test","The test","difficult","easy","for the boy"],
+["scene_sofa_door","The sofa","big","small","for the door"],
+["scene_strong_girl_lift","The girl","strong","weak","to lift the bag",true],
+["scene_warm_sea_swim","The sea","warm","cold","to swim",true],
+["scene_boy_runs_bus","The boy","fast","slow","to catch the bus",true]];
+
+/* ===== Формы прилагательных (исключения и длинные слова — здесь) ===== */
+const DBL=["big","hot","thin"],LONG=["expensive","dangerous","comfortable","uncomfortable","difficult"],IRR={good:["better","best"],bad:["worse","worst"]};
+function F(a){if(IRR[a])return IRR[a];if(LONG.includes(a))return["more "+a,"most "+a];
+ if(a.endsWith("y")){const b=a.slice(0,-1)+"i";return[b+"er",b+"est"]}
+ if(a.endsWith("e"))return[a+"r",a+"st"];
+ const b=DBL.includes(a)?a+a.slice(-1):a;return[b+"er",b+"est"]}
+function tip(a){return IRR[a]?a+" → "+IRR[a][0]+" → the "+IRR[a][1]+": исключение.":LONG.includes(a)?a+": длинное слово — more / most.":a.endsWith("y")?a+": y → i (heavier, easier).":DBL.includes(a)?a+": удваиваем согласную ("+F(a)[0]+").":a.endsWith("e")?a+": слово на -e — добавляем только -r / -st.":a+": короткое слово — "+F(a)[0]+" / "+F(a)[1]+"."}
+
+/* ===== Правила (шпаргалка) ===== */
+const RULES={
+comp:["Короткие прилагательные: + -er → tall → taller. Длинные (2+ слога): more + слово → more expensive.","Правописание: big → bigger (двойная согласная), heavy → heavier (y → i).","Исключения: good → better, bad → worse.","После сравнения всегда стоит than: The elephant is bigger than the mouse."],
+sup:["Короткие: the + -est → the tallest. Длинные: the most + слово → the most dangerous.","Исключения: the best, the worst.","Артикль the нужен всегда! Потом: of the three (из группы) или in the city (место)."],
+as:["as + прилагательное + as = «такой же … как»: The twins are as tall as each other.","not as + прилагательное + as = «не такой … как»: The mouse isn't as big as the elephant.","Между as … as прилагательное стоит в обычной форме (НЕ bigger)."],
+too:["too + прилагательное = «слишком» (плохо): The boy is too short to reach the shelf.","прилагательное + enough = «достаточно»: The boy is tall enough to ride. Enough стоит ПОСЛЕ прилагательного.","isn't + прилагательное + enough = «недостаточно»: isn't tall enough = too short."],
+mix:["Смотри на картинку и выбирай нужную структуру: -er than, the -est of, as … as, too / enough.","Если сомневаешься — зайди в «Rules» нужного модуля."]};
+const M=[{id:"comp",name:"Comparatives",sub:"taller than · more expensive than",col:"#e8590c"},{id:"sup",name:"Superlatives",sub:"the tallest · the most expensive",col:"#7048e8"},{id:"as",name:"as … as",sub:"as tall as · not as tall as",col:"#0c8599"},{id:"too",name:"too / enough",sub:"too short · tall enough",col:"#d6336c"},{id:"mix",name:"Mix",sub:"all structures together",col:"#2f9e44"}];
+const LV=["Look & choose","Fill the gap","Build the sentence","Transform"];
+const PRAISE=["Great!","Well done!","Super!","Excellent!","Perfect!"],OOPS=["Not quite.","Almost!","Let's try again later."];
+
+/* ===== Генераторы заданий ===== */
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const sent=(...p)=>cap(p.join(" "))+".";
+function mkComp([img,A,B,a,o]){const c=F(a)[0],oc=F(o)[0],S=(x,v,y)=>sent(x,"is",v,"than",y),bad=c.startsWith("more")?a+"er":"more "+a;
+ return{img,rule:RULES.comp[0]+" "+tip(a),cor:[S(A,c,B)],wr:[sent(A,"is",c,B),sent(A,"is",bad,"than",B),S(B,c,A),S(A,oc,B)],
+ gap:{t:cap(A)+" is ___ "+B+". ("+a+")",a:[c+" than"]},tr:{from:S(A,c,B),ins:'Write the sentence with "'+o+'".',a:[S(B,oc,A)]}}}
+function mkSup([img,A,B,C,a]){const[c,s]=F(a),S=(x,y)=>sent(x,"is","the "+y,"of the three");
+ return{img,rule:RULES.sup[0]+" "+tip(a),cor:[S(A,s)],wr:[sent(A,"is",s,"of the three"),sent(A,"is","the "+c,"of the three"),S(C,s),sent(A,"is","the "+s,"in the three")],
+ gap:{t:cap(A)+" is ___ of the three. ("+a+")",a:["the "+s]},tr:{from:sent(A,"is",c,"than",B,"and",C),ins:'Use "the … of the three".',a:[S(A,s)]}}}
+function mkEq([img,A,B,a]){const c=F(a)[0];
+ return{img,rule:RULES.as[0]+" "+RULES.as[2],cor:[sent(A,"is as",a,"as",B)],wr:[sent(A,"is as",a,"than",B),sent(A,"is as",c,"as",B),sent(A,"is not as",a,"as",B),sent(A,"is as",a,B)],
+ gap:{t:cap(A)+" ___ "+B+". ("+a+")",a:["is as "+a+" as"]},tr:{from:sent(A,"isn't",c,"than",B),ins:'Use "as … as".',a:[sent(A,"is as",a,"as",B),sent(B,"is as",a,"as",A)]}}}
+function mkNot([img,A,B,a]){const c=F(a)[0];
+ return{img,rule:RULES.as[1]+" "+RULES.as[2],cor:[sent(B,"isn't as",a,"as",A)],wr:[sent(B,"is as",a,"as",A),sent(A,"isn't as",a,"as",B),sent(B,"isn't as",c,"as",A),sent(B,"isn't as",a,"than",A)],
+ gap:{t:cap(B)+" ___ "+A+". ("+a+")",a:["isn't as "+a+" as"]},tr:{from:sent(A,"is",c,"than",B),ins:'Use "not as … as".',a:[sent(B,"isn't as",a,"as",A)]}}}
+function mkToo([img,S,adj,opp,rest,pos]){const E=pos?adj:opp,Tw=pos?opp:adj,
+ too=sent(S,"is too",Tw,rest),notE=sent(S,"isn't",E,"enough",rest),en=sent(S,"is",E,"enough",rest),notToo=sent(S,"isn't too",Tw,rest),r=Math.random()<.5;
+ const g=pos?{t:S+" is "+E+" ___ "+rest+".",a:["enough"]}:r?{t:S+" is ___ "+Tw+" "+rest+".",a:["too"]}:{t:S+" isn't "+E+" ___ "+rest+".",a:["enough"]};
+ g.t+=" (too / enough)";
+ return{img,rule:RULES.too[0]+" "+RULES.too[1],cor:pos?[en,notToo]:r?[too,notE]:[notE,too],wr:[sent(S,"is too",E,rest),sent(S,"isn't",Tw,"enough",rest),sent(S,"is enough",E,rest),pos?notE:en],
+ gap:g,tr:pos?{from:en,ins:'Use "too".',a:[notToo]}:{from:too,ins:'Use "enough".',a:[notE]}}}
+const GEN={comp:()=>P.map(mkComp),sup:()=>T.map(mkSup),as:()=>[...E.map(mkEq),...P.map(mkNot)],too:()=>SC.map(mkToo)};
+const items=m=>m==="mix"?Object.values(GEN).flatMap(g=>g()):GEN[m]();
+
+/* ===== Вспомогательное ===== */
+const $=s=>document.querySelector(s),app=$("#app");
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.random()*a.length|0];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function btn(x,c,f){const b=el("button",c,x);b.onclick=f;return b}
+const norm=s=>s.toLowerCase().replace(/[’`]/g,"'").replace(/n't\b/g," not").replace(/[.,!?]/g,"").replace(/\s+/g," ").trim();
+const accent=c=>document.documentElement.style.setProperty("--acc",c);
+let progress={};try{progress=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(progress))}catch(e){}};
+function pic(f){const d=el("div","pic"),i=new Image();i.alt="";i.src=IMG+f+".png";i.onerror=()=>{d.textContent=IMG+f+".png";d.className="pic ph"};d.append(i);return d}
+
+/* ===== Главная и правила ===== */
+function home(){accent("#3b3f8f");app.innerHTML="";
+ app.append(el("h1","","Comparisons"),el("p","sub","Choose a module. Выбери тему — уровни можно проходить в любом порядке."));
+ M.forEach(m=>{const c=el("section","mod");c.style.setProperty("--acc",m.col);
+  const h=el("div","mh");h.append(el("h2","",m.name),el("small","",m.sub),btn("Rules","ghost",()=>rules(m)));
+  const g=el("div","lv");LV.forEach((n,i)=>{const s=progress[m.id+i]||0,b=btn("","lvb",()=>start(m,i));b.append(el("b","",(i+1)+". "+n),el("span","stars","★".repeat(s)+"☆".repeat(3-s)));g.append(b)});
+  c.append(h,g);app.append(c)})}
+function rules(m){accent(m.col);app.innerHTML="";const ex=pick(items(m.id)),b=el("div","box left");
+ RULES[m.id].forEach(t=>b.append(el("p","",t)));
+ app.append(btn("← Menu","ghost",home),el("h1","",m.name),pic(ex.img),el("div","def",ex.cor[0]),b,btn("Start level 1","pri nx",()=>start(m,0)))}
+
+/* ===== Движок ===== */
+let S;
+function start(m,lv){accent(m.col);S={m,lv,q:shuffle(items(m.id)).slice(0,ROUND),done:0,first:0,seen:new Set()};S.n=S.q.length;next()}
+function next(){if(!S.q.length)return finish();S.it=S.q.shift();S.lock=false;app.innerHTML="";
+ const bar=el("div","bar"),p=el("span","pill"),sc=el("span","pill");p.id="prog";sc.id="score";
+ bar.append(btn("← Menu","ghost",home),el("span","sp"),p,sc);
+ const box=el("div","box");box.id="box";const fb=el("div","fb");fb.id="fb";fb.setAttribute("aria-live","polite");
+ app.append(el("h2","",S.m.name+" · "+LV[S.lv]),bar,pic(S.it.img),box,fb);upd();[qChoose,qGap,qBuild,qTrans][S.lv]()}
+function upd(){$("#prog").textContent=S.done+" / "+S.n;$("#score").textContent="✓ "+S.first}
+function result(ok){const it=S.it,k=it.cor[0];S.lock=true;
+ if(!S.seen.has(k)){S.seen.add(k);if(ok)S.first++}
+ if(ok)S.done++;else S.q.push(it);upd();
+ const fb=$("#fb");fb.className="fb "+(ok?"ok":"bad");fb.textContent=ok?"✓ "+pick(PRAISE):"✗ "+pick(OOPS);
+ if(!ok)fb.append(el("div","ans","Correct: "+(S.lv===3?it.tr.a[0]:S.lv===1?it.gap.t.replace("___","["+it.gap.a[0]+"]"):it.cor[0])),el("div","rule",it.rule));
+ const n=btn(S.q.length?"Next →":"Finish","pri nx",next);app.append(n);n.focus()}
+const mark=(b,ok)=>{b.classList.add(ok?"ok":"bad");b.prepend(ok?"✓ ":"✗ ")};
+
+/* Уровень 1: выбери предложение */
+function qChoose(){const it=S.it,c=it.cor[0],box=$("#box"),row=el("div","opts"),bs=[];
+ box.append(el("div","def","Which sentence matches the picture?"));
+ shuffle([c,...shuffle([...new Set(it.wr)].filter(x=>x!==c)).slice(0,3)]).forEach(t=>{
+  const b=btn(t,"opt",()=>{if(S.lock)return;const ok=t===c;bs.forEach(x=>x.b.disabled=true);mark(b,ok);if(!ok)mark(bs.find(x=>x.t===c).b,true);result(ok)});bs.push({t,b});row.append(b)});
+ box.append(row)}
+/* Поле ввода + кнопка проверки */
+function typed(ans){const go=()=>{if(S.lock||!i.value.trim())return;const ok=ans.some(x=>norm(x)===norm(i.value));i.disabled=true;i.classList.add(ok?"ok":"bad");result(ok)};
+ const i=el("input");i.type="text";i.autocomplete="off";i.autocapitalize="off";i.spellcheck=false;i.setAttribute("aria-label","Your answer");i.onkeydown=e=>{if(e.key==="Enter")go()};
+ const r=el("div","row");r.append(i,btn("Check ✓","pri",go));setTimeout(()=>i.focus(),50);return r}
+/* Уровень 2: впиши пропуск */
+function qGap(){const g=S.it.gap,p=el("div","def");p.innerHTML=g.t.replace("___",'<span class="blank"></span>');$("#box").append(p,typed(g.a))}
+/* Уровень 4: преобразуй */
+function qTrans(){const t=S.it.tr;$("#box").append(el("div","def",t.from),el("div","ins",t.ins),typed(t.a))}
+/* Уровень 3: собери предложение (1–2 лишних слова!) */
+function qBuild(){const it=S.it,box=$("#box"),w=it.cor[0].split(" "),lw=w.map(norm),ex=[];
+ shuffle(it.wr).forEach(s=>s.split(" ").forEach(x=>{const n=norm(x);if(ex.length<2&&!lw.includes(n)&&!ex.some(e=>norm(e)===n))ex.push(x.replace(/\.$/,""))}));
+ const tl=shuffle([...w,...ex].map((x,i)=>({x,i}))),ans=[],area=el("div");let res=null;
+ const draw=()=>{area.innerHTML="";const line=el("div","built"+(res===null?"":res?" ok":" bad"));
+  ans.forEach(a=>line.append(el("span","chip",a.x)));if(!ans.length)line.textContent="…";
+  const tiles=el("div","tiles");
+  tl.forEach(t=>{const b=btn(t.x,"tile",()=>{if(!S.lock&&!ans.includes(t)){ans.push(t);draw()}});b.disabled=ans.includes(t)||S.lock;tiles.append(b)});
+  const ctl=el("div","row");
+  ctl.append(btn("⌫ Erase","ghost",()=>{if(!S.lock){ans.pop();draw()}}),btn("↺ Start again","ghost",()=>{if(!S.lock){ans.length=0;draw()}}),
+   btn("Check ✓","pri",()=>{if(S.lock||!ans.length)return;const v=norm(ans.map(a=>a.x).join(" "));res=it.cor.some(c=>norm(c)===v);S.lock=true;draw();result(res)}));
+  area.append(line,tiles,ctl)};
+ box.append(el("div","def","Build the sentence. Careful: there are extra words!"),area);draw()}
+
+function finish(){app.innerHTML="";const p=S.first/S.n,st=p>=.9?3:p>=.7?2:1,k=S.m.id+S.lv;
+ if(st>(progress[k]||0)){progress[k]=st;save()}
+ const b=el("div","box final");
+ b.append(el("h2","","Level complete!"),el("div","def","Correct at first try: "+S.first+" / "+S.n),el("div","stars","★".repeat(st)+"☆".repeat(3-st)),
+  el("p","",st===3?"Fantastic work!":st===2?"Good job! Practise a little more.":"Nice try! Do it again — you can do better."));
+ const r=el("div","row");r.append(btn("↺ Try again","pri",()=>start(S.m,S.lv)));
+ if(S.lv<3)r.append(btn("Next level →","pri",()=>start(S.m,S.lv+1)));
+ r.append(btn("Menu","ghost",home));b.append(r);app.append(b)}
+home();
+</script></body></html>
